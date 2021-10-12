@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 from SampleFromP import SampleFromP
 from RejectSampling import RejectSampling
+from RegressionEstimatorIS import RegressionEstimatorIS
 
 times = pd.read_csv('carTimes_peak.csv',';', index_col=False, header=None)
 theta_car = -0.1        # what is this?
@@ -23,7 +24,7 @@ d=400 # Zone where we want to calculate log-sum
 v = v_od[home][0:Nalt] # Utility to homezone. Sampling is done based on this utility
 v_target = v_od[d][0:Nalt] # Utility on which log-sum is supposed to be calculated.
 expv = np.exp(v)
-p_sample = expv/np.sum(expv) # Probability from homezone. Used for sampling locations
+p_sample = expv/np.sum(expv) # Probability from homezone. Used for sampling locations (ph)
 
 pt = np.exp(v_target)/(np.sum(np.exp(v_target))) # Probability in zone d
 
@@ -57,8 +58,10 @@ for k in range(nit):
     w4 = w[np.flatnonzero(w)]/M
     approx[k,2] = np.matmul(w4, expt[Ir].T)
     
-    w6 = w * Nsamp / sum(pr[c]/p_sample[c])
-    approx[k,3] = np.matmul(w6, expt.T)
+    #w6 = w * Nsamp / sum(pr[c]/p_sample[c])
+    #approx[k,3] = np.matmul(w6, expt.T)
+    
+    approx[k,3] = RegressionEstimatorIS(pr,p_sample,expt/pr,c)
 
 for i in range (approx.shape[1]):
     val = approx[:,i]
