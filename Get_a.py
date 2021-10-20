@@ -13,7 +13,10 @@ def Get_a(i, rng):
          If a is 1, we use the probabilites in d. Should give very good approximation of logsums
          If a is 0, we don't gain any information. Should give no improvement
     """
-    rnge = np.linspace(0,1,rng)
+    if rng>1:
+        rnge = np.linspace(0,1,rng)
+    elif (rng<2):
+        rnge = np.linspace(0.6,1,rng)
     a = rnge[i]
     return a
 

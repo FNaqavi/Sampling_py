@@ -12,9 +12,9 @@ def SampleFromP(p, N):
     Parameters
     ----------
     p : TYPE
-        probability
+        probability from homezone. Used for sampling locations (ph)
     N : TYPE
-        Number of samples
+        Number of samples 
 
     Returns
     -------
@@ -29,7 +29,6 @@ def SampleFromP(p, N):
         edges = edges * (1 / s)
         
     # draw bins
-    
     rv = np.random.random(N)    
     c = np.histogram(rv, edges)[-2]
     ce = c[-1]
