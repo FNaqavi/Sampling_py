@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sun Oct 10 19:56:44 2021
+Created on Wed Oct 20 11:25:28 2021
 
 @author: naqavi
 """
 import numpy as np
+import pandas as pd
 
-
-# def RejectSampling(*args):
-def RejectSampling(g, f, N, gaccept):
+def RejectSampling_nest(g, f, N, gaccept):
 
     #    g = args[0]
     #    gaccept = args[-1]
@@ -19,7 +18,8 @@ def RejectSampling(g, f, N, gaccept):
     I = I.reshape((len(I),))
     g = g[I]
     gaccept = np.array([gaccept[i] for i in I.flat])
-    gaccept = gaccept.reshape(len(gaccept),)
+    idx_unique = pd.unique(f.index)
+    f = f.loc[idx_unique]
     f = np.array([f[i] for i in I.flat])
     g = g/np.sum(g)
     nonzero_g_els = np.flatnonzero(g)
