@@ -49,45 +49,41 @@ method3 = "RegressionEstimatorIS"  ## I need to check this function: expt/pr is 
 mask = (NI>0)
 selected_zones = np.array(np.where(mask)).flatten()
 
-# for selected_zones
-# 0) Intialize EV in end time 
-
+###for selected_zones
+### 0) Intialize EV in end time 
 EV = [np.nan] * 11
 EV.append( v_od[home][selected_zones])
-# update ev in time t
+### update ev in time t
 for t in range(10,0,-1):
     approx = [] 
     for i in selected_zones:
-        v_r = v_od[i]   
+        v_r = v_od.loc[i,:]   
         expv_r = np.exp(v_r)
         pr_n = expv_r/np.sum(expv_r)
-        v_n = v_od[i][selected_zones] + EV[t+1]
+        v_n = v_od.loc[i,selected_zones] + EV[t+1]
         expv_n = np.exp(v_n)
         ph_n = expv_n/np.sum(expv_n) # Probability from homezone. Used for sampling locations (ph)
         ph_n = ph_n[selected_zones]
         ph_n = ph_n.values.reshape(-1,1)
         expv_n = expv_n[selected_zones]
-        lgsum = approx_methods(ph_n, pr_n[selected_zones], expv_n, Nsamp, I, NI, w[selected_zones], c, method2)
-        approx.append(lgsum)
+        exps = approx_methods(ph_n, pr_n[selected_zones], expv_n, Nsamp, I, NI, w[selected_zones], c, method1)
+        approx.append(exps)
     EV[t] = np.log(approx)
     print(t)
-
 EV.pop(0)
 
-# for all zones 
-# EV_all = [np.nan] * 11
-# EV_all.append(v_od[home][0:1240])
-# for t in range(10,0,-1):
-#     approx = [] 
-#     for i in range(1240):
-
-#         v_n = v_od[i][0:1240] + EV_all[t+1]
-#         expv_n = np.exp(v_n)
-#         approx.append(lgsum)
-#     EV_all[t] = np.log(approx)
-#     print(t)
-
-# EV_all.pop(0)
+### for all zones 
+EV_all = [np.nan] * 11
+EV_all.append(np.array(v_od.loc[home, 0:1240]))
+for t in range(10,0,-1):
+    lsm = [] 
+    for i in range(1240):
+        v_n = v_od.loc[i, 0:1240] + EV_all[t+1]
+        expv_n = np.exp(v_n)
+        lsm.append(sum(expv_n))
+    EV_all[t] = np.log(lsm)
+    print(t)
+EV_all.pop(0)
 
 
 
