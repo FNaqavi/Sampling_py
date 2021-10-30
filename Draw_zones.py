@@ -4,9 +4,11 @@ Created on Thu Oct 14 13:59:05 2021
 
 @author: naqavi
 """
-
+import numpy as np
 
 def Draw_zones(times):
+    
+    np.random.seed()
     rand_hd_zones = times.sample().sample(axis=1)
     col = rand_hd_zones.columns.values.astype(int)[-1]        # get idx for column
     row = rand_hd_zones.index.values.astype(int)[-1]         # get idx for rows

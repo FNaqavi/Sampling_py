@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Thu Oct 14 13:55:24 2021
+Created on Thu Oct 28 12:58:16 2021
 
 @author: naqavi
 """
@@ -11,7 +11,7 @@ from Get_a import Get_a
 from logsum_methods import logsum_methods
 from SampleFromP import SampleFromP
 
-def Variance_reduction_methods(times, theta_car, Nalt, hd_lst, rng, home, d):
+def iterations(times, theta_car, Nalt, hd_lst, rng, home, d):
 
     v_od = times*theta_car;
     v = v_od[home][0:Nalt] # Utility to homezone. Sampling is done based on this utility
@@ -24,8 +24,10 @@ def Variance_reduction_methods(times, theta_car, Nalt, hd_lst, rng, home, d):
     Nsamp = 200
     xx = []
     approx = np.zeros((nit,4)) 
-
-
+    wrs = []
+    ws = []
+    w4s = []
+    w_regests = []
     for i in range(rng):
         print(i)
         a = Get_a(i, rng)   
@@ -35,10 +37,14 @@ def Variance_reduction_methods(times, theta_car, Nalt, hd_lst, rng, home, d):
 
         real = np.sum(np.exp(v_target))
         
+        
+        
         for k in range(nit):
-
-            approx = logsum_methods(ph, pr, expt, Nsamp, approx, k)
-
+            approx, wr, w4, w, w_regest = logsum_methods(ph, pr, expt, Nsamp, approx, k)
+            wrs.append(wr)
+            w4s.append(w4)
+            ws.append(w)
+            w_regests.append(w_regest)
             
         
         for j in range (approx.shape[1]):
@@ -51,5 +57,5 @@ def Variance_reduction_methods(times, theta_car, Nalt, hd_lst, rng, home, d):
             xx.append(np.stack((me, error, no, dev, tval, a)).flatten())
 
     hd_lst.append(xx)            
-    return (hd_lst , approx)    
+    return (hd_lst , approx, wrs, w4s, ws, w_regests)    
 
