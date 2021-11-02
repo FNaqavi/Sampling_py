@@ -22,7 +22,7 @@ def RejectSampling(g, f, N, gaccept):
     if len(gaccept) == 1240:
         gaccept = gaccept[I].flatten()
     #gaccept = np.array([gaccept[i] for i in I.flat]) 
-    f = np.array([f[i] for i in I.flat])
+    # f = np.array([f[i] for i in I.flat])
     g = g/np.sum(g)
     #nonzero_g_els = np.flatnonzero(g)
     fr = f/np.sum(f)

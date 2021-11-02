@@ -12,7 +12,7 @@ from SelfNormalizedIS import SelfNormalizedIS
 from RegressionEstimatorIS import RegressionEstimatorIS
 
 
-def approx_methods(ph, pr, expt, Nsamp, I, NI, w, c, method, phold, prold):
+def approx_methods(ph, pr, expt, Nsamp, I, NI, w, c, method, phold, prold, w_all,expt_all):
     """
     
     Parameters
@@ -32,19 +32,23 @@ def approx_methods(ph, pr, expt, Nsamp, I, NI, w, c, method, phold, prold):
     approx : weighted exp of (a float number for each method.)
 
     """
-    Ir, NIr, wr = RejectSampling(NI, pr, Nsamp, ph)   # Ir is indeces of non-zero weights (wr)
-    w4 = SelfNormalizedIS(w, pr)
+    # Ir, NIr, wr = RejectSampling(NI, pr, Nsamp, ph)   # Ir is indeces of non-zero weights (wr)
+    # w4 = SelfNormalizedIS(w, pr)
     
-    if method == "RejectSampling":    
-        approx= np.matmul(wr,expt[Ir.flatten()].T)
-        # approx= np.matmul(wr,expt.T)
+    # if method == "RejectSampling":    
+    #     approx= np.matmul(wr,expt[Ir.flatten()].T)
+    #     # approx= np.matmul(wr,expt.T)
 
-    elif method == "SelfNormalized":            
-        # approx = np.matmul(w4, expt[Ir.flatten()].T)
-        approx= np.matmul(w4,expt[Ir])
+    # elif method == "SelfNormalized":            
+    #     # approx = np.matmul(w4, expt[Ir.flatten()].T)
+    #     approx= np.matmul(w4,expt[Ir])
     
-    elif method == "RegressionEstimatorIS":  
-        approx= RegressionEstimatorIS(prold, phold, expt/pr, c)
-    
+    if method == "RegressionEstimatorIS": 
+        prold = np.array(prold).reshape(-1,)
+        
+        approx= RegressionEstimatorIS(prold, phold, expt_all/prold[c], c)
+    if method == 'base':
+        pholdc = phold[c].reshape(-1,)
+        approx = np.mean(expt_all/pholdc)
     return approx 
     

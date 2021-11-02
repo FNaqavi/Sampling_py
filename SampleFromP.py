@@ -46,22 +46,14 @@ def SampleFromP(p, N):
     if len(xv) == N:     # each value is sampled at most once
         x = xv
     else:                # some values are sampled more than once    
-        xc = []
+        x=np.zeros((N,),dtype=int)   
+        count=0
         for i in range(len(xv)):
-            xc.append(c[int(xv[i])])    
-        d = np.zeros((N,))
-        dv = [np.diff(xv, axis = 0)][-1]
-    #   dv = np.insert(dv, 0, xv[0])
-        dp = np.cumsum(xc)-1
-       # dp = dp[:-1]
-        for i in range(len(dv)):          #d(dp) = dv
-            idx = dp[i]
-            d[idx] = dv[i]
-                #print(i, dp, dv, dp.shape)
-                  
-        x = np.cumsum(d)
-        
-    x = x[np.random.permutation(N)]
+            for j in range(NI[xv[i][0]]):
+                x[count]=xv[i][0]
+                count+=1
+            # x.append(c[int(xv[i])])            
+    #x = x[np.random.permutation(N)]
         
     return I, NI, w, x.astype(int)
 
