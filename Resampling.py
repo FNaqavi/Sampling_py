@@ -11,6 +11,7 @@ from Draw_zones import Draw_zones
 from SampleFromP import SampleFromP
 from approx_methods import approx_methods
 
+
 times = pd.read_csv('carTimes_peak.csv',';', index_col=False, header=None)
 theta_car = -0.06      
 theta_trip=-6.12
@@ -23,6 +24,8 @@ print(home, d)
 
 # home = 1233
 # d = 721
+# home = 212
+# d = 1223
 
 v_od = times*theta_car;
 v = v_od.loc[home,0:Nalt] # Utility to homezone. Sampling is done based on this utility. ph is calculated based on this
@@ -95,32 +98,38 @@ method1 = "RejectSampling"
 method2 = "SelfNormalized"
 method3 = "RegressionEstimatorIS"  ## I need to check this function: expt/pr is constant
 method4 = 'base'
+method5 = "RegressionEstimatorIS_scaper"
 
 EV_m1 = EV_approx(method1)
 EV_m2 = EV_approx(method2)
 EV_m3 = EV_approx(method3)
 EV_m4 = EV_approx(method4)
+EV_m5 = EV_approx(method5)
+
+#%%
 plt.plot([np.mean(np.abs(EV_m1[t]-EV_m1[t-1])) for t in range(1,Tmax)], 'r')
 plt.plot([np.mean(np.abs(EV_m2[t]-EV_m2[t-1])) for t in range(1,Tmax)], 'b')
 plt.plot([np.mean(np.abs(EV_m3[t]-EV_m3[t-1])) for t in range(1,Tmax)], 'g')
 plt.plot([np.mean(np.abs(EV_m4[t]-EV_m4[t-1])) for t in range(1,Tmax)], 'm')
+plt.plot([np.mean(np.abs(EV_m5[t]-EV_m5[t-1])) for t in range(1,Tmax)], 'k')
 plt.plot([np.mean(np.abs(EV_all[t]-EV_all[t-1])) for t in range(1,Tmax)], 'c')
-plt.show()
 
+plt.show()
 
 diff1 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m1)]
 diff2 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m2)]
 diff3 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m3)]
 diff4 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m4)]
-
+diff5 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m5)]
+plt.show()
 print('print diff1', diff1)
 print('print diff2', diff2)
 print('print diff3', diff3)
 print('print diff4', diff4)
+print('print diff5', diff5)
 
-
-xx = pd.DataFrame([diff1, diff2, diff3, diff4], index = ['diff1', 'diff2', 'diff3', 'diff4']).T
-xx.plot.line(legend=True, color = {"diff1": "r", "diff2": "b", 'diff3':'g','diff4':'m'})
+xx = pd.DataFrame([diff1, diff2, diff3, diff4, diff5], index = ['diff1', 'diff2', 'diff3', 'diff4', 'diff5']).T
+xx.plot.line(legend=True, color = {"diff1": "r", "diff2": "b", 'diff3':'g','diff4':'m', 'diff5':'k'})
 plt.show()
 
 

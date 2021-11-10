@@ -6,10 +6,10 @@ Created on Fri Oct 22 14:21:39 2021
 """
 
 import numpy as np
-from SampleFromP import SampleFromP
 from RejectSampling import RejectSampling
 from SelfNormalizedIS import SelfNormalizedIS
 from RegressionEstimatorIS import RegressionEstimatorIS
+from RegressionEstimatorIS_scaper import RegressionEstimatorIS_scaper
 
 
 def approx_methods(ph, pr, expt, Nsamp, I, NI, w, c, method, phold, prold, w_all,expt_all):
@@ -51,11 +51,17 @@ def approx_methods(ph, pr, expt, Nsamp, I, NI, w, c, method, phold, prold, w_all
 
     
     elif method == "RegressionEstimatorIS": 
-        prold = np.array(prold).reshape(-1,)
-        
+        prold = np.array(prold).reshape(-1,)     
         approx= RegressionEstimatorIS(prold, phold, expt_all/prold[c], c)
+        
     elif method == 'base':
         pholdc = phold[c].reshape(-1,)
         approx = np.mean(expt_all/pholdc)
+        
+    elif method == "RegressionEstimatorIS_scaper": 
+        prold = np.array(prold).reshape(-1,)     
+        approx= RegressionEstimatorIS_scaper(prold, phold, expt_all/prold[c], c)
+        
+        
     return approx 
     
