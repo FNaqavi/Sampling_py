@@ -8,4 +8,4 @@ import pandas as pd
 
 def plots(df): 
     no = pd.DataFrame((df['no1'], df['no2'], df['no3'], df['no4'])).T
-    return (no.plot())
+    return (no)

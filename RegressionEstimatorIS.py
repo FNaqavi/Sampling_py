@@ -8,8 +8,19 @@ import numpy as np
 
 
 def RegressionEstimatorIS(p, q, f, c):
+    """
+    Parameters
+    ----------
+    p : target function. control variate.
+    q : sampling function. (p from homezone)
+    f : function of interest.
+    c : Index of sampled values from q.
+    Returns
+    -------
+    importance sampling estimator of E_p[f].
+    """
 
-    f = f[c]
+    #f = f[c]
     
     w = p[c]/q[c]    # sampling weight, i.e., p/q where p is target distribution and q is
                      # distribution from which samples are drawn. 

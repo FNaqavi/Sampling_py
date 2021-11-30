@@ -16,13 +16,14 @@ from Get_a import Get_a
 
 def Variance_reduction_methods(times, theta_car, Nalt, hd_lst):
     home, d = Draw_zones(times)
+    print(home, d)
     v_od = times*theta_car;
     v = v_od[home][0:Nalt] # Utility to homezone. Sampling is done based on this utility
     v_target = v_od[d][0:Nalt] # Utility on which log-sum is supposed to be calculated.
     expv = np.exp(v)
     p_sample = expv/np.sum(expv) # Probability from homezone. Used for sampling locations (ph)
     pt = np.exp(v_target)/(np.sum(np.exp(v_target))) # Probability in zone d
- 
+    
     xx = []
     rng = 11    # how many trial a; see Get_a function
     for i in range(rng):
@@ -42,8 +43,7 @@ def Variance_reduction_methods(times, theta_car, Nalt, hd_lst):
             I, NI, w, c = SampleFromP(p_sample,Nsamp)
             approx[k,0] = np.matmul(w, expt[I].T)
        
-            Ns2=Nsamp
-            Ir, NIr, wr = RejectSampling(NI,pr,Ns2,p_sample)
+            Ir, NIr, wr = RejectSampling(NI,pr,Nsamp,p_sample)
             approx[k,1]= np.matmul(wr,expt[Ir].T)
               
             M = np.sum(pd.Series.multiply(w[np.flatnonzero(w)], pr[np.flatnonzero(w)]))
