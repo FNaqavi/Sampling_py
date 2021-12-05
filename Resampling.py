@@ -19,15 +19,15 @@ times = pd.read_csv('carTimes_peak.csv',';', index_col=False, header=None)
 theta_car = -0.06      
 theta_trip=-6.12
 Nalt = 1240
-Tmax = 30
+Tmax = 15
 hd_lst = []
 
-# (home, d) = Draw_zones(times)
-# print(home, d)
+(home, d) = Draw_zones(times)
+print(home, d)
 
 
-home = 1008 
-d = 1046
+# home = 1008 
+# d = 1046
 
 # home = 1233
 # d = 721
@@ -99,18 +99,14 @@ def difference(EV1, EV2):
     zip_object = zip(EV1, EV2)
     meanEVdiff = np.mean(EV1) - np.mean(EV2)
     for EV1_i, EV2_i in zip_object:
-        diff.append(EV1_i - EV2_i - 0*meanEVdiff)
-        # diff.append(np.sqrt((EV1_i - EV2_i)**2))
+        # diff.append(EV1_i - EV2_i - 0*meanEVdiff)
+        diff.append(np.sqrt((EV1_i - EV2_i)**2))
     return diff
-
-
 method1 = "RejectSampling"
 method2 = "SelfNormalized"  # ratio method
 method3 = "RegressionEstimatorIS"  ## I need to check this function: expt/pr is constant  # control variate method
 method4 = 'base'
 method5 = "RegressionEstimatorIS_scaper"
-
-
 EV_m1 = EV_approx(method1)
 EV_m2 = EV_approx(method2)
 EV_m3 = EV_approx(method3)
@@ -124,7 +120,6 @@ plt.plot([np.mean(np.abs(EV_m3[t]-EV_m3[t-1])) for t in range(1,Tmax)], 'g')
 plt.plot([np.mean(np.abs(EV_m4[t]-EV_m4[t-1])) for t in range(1,Tmax)], 'm')
 plt.plot([np.mean(np.abs(EV_m5[t]-EV_m5[t-1])) for t in range(1,Tmax)], 'k')
 plt.plot([np.mean(np.abs(EV_all[t]-EV_all[t-1])) for t in range(1,Tmax)], 'c')
-
 plt.show()
 
 diff1 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m1)]
@@ -140,7 +135,8 @@ print('print diff4', diff4)
 print('print diff5', diff5)
 
 xx = pd.DataFrame([diff1, diff2, diff3, diff4, diff5], index = ['diff1', 'diff2', 'diff3', 'diff4', 'diff5']).T
-xx.plot.line(legend=True, color = {"diff1": "r", "diff2": "b", 'diff3':'g','diff4':'m', 'diff5':'k'})
+ax = xx.plot.line(legend=True, color = {"diff1": "r", "diff2": "b", 'diff3':'g','diff4':'m', 'diff5':'k'})
+ax.invert_xaxis()
 plt.show()
 
 
@@ -149,12 +145,7 @@ plt.show()
 expt = np.exp(v_target)
 real = np.sum(expt)
 
-
-
-def EV_approx_MNL(method,a):
-    #hd_lst = []
-    #expss = [np.nan] * (rng)
- 
+def EV_approx_MNL(method,a): 
     v_r = v_target*a + v*(1-a)   # new v (1240 values)
     expv_r = np.exp(v_r)        
     pr_n = expv_r/np.sum(expv_r)
@@ -162,22 +153,7 @@ def EV_approx_MNL(method,a):
     expv_n = np.exp(v_n)
     ph_n = expv_n/np.sum(expv_n) # Probability from homezone (any selected zone). # Used for sampling locations (ph)   
     exps = approx_methods(ph_n, pr_n[selected_zones], expv_n, Nsamp, I, NI, w[selected_zones], c, method, ph, pr_n,w, expv_n)
-
-    return exps  #hd_lst
-
-
-
-
-
-def create_df(hd_lst,j):
-    for i in range(rng):
-        lst = hd_lst[i]
-        hd_lst[i] = [np.round(elem, 2) for elem in lst ]
-    hd_lst_arr = np.array(hd_lst).flatten()
-    df_info = hd_lst_arr.reshape((-1,6))
-    df = pd.DataFrame(df_info ,columns = ['me', 'error', 'lse'+j, 'dev', 'tval', 'a'])
-    return df
-
+    return exps 
 
 def avg_df(expss,k, mthd):
     xx = pd.DataFrame()
@@ -226,14 +202,12 @@ hd_lst4 = avg_df(exps4, k, str(4))
 
 
 lse = pd.DataFrame((hd_lst2['no2'], hd_lst3['no3'], hd_lst4['no4'])).T
-
 lse.rename({'no2':'SelfNormalized','no3':'RegressionEstimatorIS', 'no4':'base'},inplace= True, axis = 1)
-
 home_zone = str(home)
 destination = str(d)
 ax = lse.plot(colormap='jet', title='home = '+ home_zone +' d = '+ destination)
 ax.set(xlabel='a (a0 = 0, a10 = 1)', ylabel='variance')
-ax.legend(loc='upper right')
+ax.legend(loc='center right')
 plt.show()
 
 
