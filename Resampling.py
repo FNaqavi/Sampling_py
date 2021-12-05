@@ -4,82 +4,236 @@ Created on Fri Oct  8 10:34:00 2021
 
 @author: naqavi
 """
-
-# %%
-import pandas as pd
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+from Draw_zones import Draw_zones
 from SampleFromP import SampleFromP
-from RejectSampling import RejectSampling
-from RegressionEstimatorIS import RegressionEstimatorIS
+from approx_methods import approx_methods
+from Get_a import Get_a
+#from Round_els import Round_els
+#from clean_df import clean_df
+#from plots import plots
 
 times = pd.read_csv('carTimes_peak.csv',';', index_col=False, header=None)
-theta_car = -0.1        # what is this?
+theta_car = -0.06      
+theta_trip=-6.12
 Nalt = 1240
+Tmax = 30
+hd_lst = []
+
+# (home, d) = Draw_zones(times)
+# print(home, d)
+
+
+home = 1008 
+d = 1046
+
+# home = 1233
+# d = 721
+# home = 212
+# d = 1223
+
 v_od = times*theta_car;
-home = 3 # Zone used for sampling locations
-d=400 # Zone where we want to calculate log-sum
-
-#%%
-
-v = v_od[home][0:Nalt] # Utility to homezone. Sampling is done based on this utility
-v_target = v_od[d][0:Nalt] # Utility on which log-sum is supposed to be calculated.
+v = v_od.loc[home,0:Nalt] # Utility from homezone. Sampling is done based on this utility. ph is calculated based on this
+v_target = v_od.loc[d,0:Nalt] # Utility on which log-sum is supposed to be calculated. pr is calculated based on this
 expv = np.exp(v)
-p_sample = expv/np.sum(expv) # Probability from homezone. Used for sampling locations (ph)
+ph = expv/np.sum(expv) # Probability from homezone. Used for sampling locations (ph)
+ph = ph.values.reshape(-1,1)
+#pt = np.exp(v_target)/(np.sum(np.exp(v_target))) # Probability in zone d
+nit = 100  # number of iterations? 
+Nsamp = 100  # number of zones to be sampled
+ 
+I, NI, w, c = SampleFromP(ph, Nsamp)
 
-pt = np.exp(v_target)/(np.sum(np.exp(v_target))) # Probability in zone d
+###for selected_zones
+mask = (NI>0)
+#selected_zones = np.array(np.where(mask)).flatten()
+### 0) Intialize EV in end time 
+selected_zones = c
 
-a = 0.5 # If a is 1, we use the probabilites in d. Should give very good approximation of logsums
-        # If a is 0, we don't gain any information. Should give no improvement
-vr = v_target*a + v*(1-a)
-pr = np.exp(vr)/(np.sum(np.exp(vr))) # Probabilities used for updating corrections
+#%% Recursive logit with sampled zones
+def EV_approx(method):
+    print(method)
+    EV = [np.nan] * (Tmax+1)
+    EV.append(v_od.loc[home,selected_zones])
+    ### update ev in time t
+    for t in range(Tmax, 0, -1):
+        approx = [] 
+        for i in selected_zones:
+            v_r = v_od.loc[i,:] + v_od.loc[home,:]        # new v (1240 values)
+            expv_r = np.exp(v_r)        
+            pr_n = expv_r/np.sum(expv_r)
+            v_n = v_od.loc[i,selected_zones] + EV[t+1]  + theta_trip    # new vr (Nsamp number of values)
+            expv_n = np.exp(v_n)
+            ph_n = expv_n/np.sum(expv_n) # Probability from homezone (any selected zone). # Used for sampling locations (ph)   
+            exps = approx_methods(ph_n, pr_n[selected_zones], expv_n, Nsamp, I, NI, w[selected_zones], c, method, ph, pr_n,w, expv_n)
+            exps += np.exp(v_od.loc[i,home])
+            approx.append(exps)
+        EV[t] = np.log(approx)
+        print(t, sum(EV[t]))
+    #print([type(p) for p in EV])
+    EV.pop(0)
+    return EV
+
+
+#%% Recursive logit when all 1240 zones are in the choice set 
+EV_all = [np.nan] * (Tmax+1)
+EV_all.append(np.array(v_od.loc[home, :]))
+print('EV all_zones')
+for t in range(Tmax,0,-1):
+    lsm = [] 
+    for i in range(1240):
+        v_n = v_od.loc[i, :] + EV_all[t+1] +theta_trip
+        expv_n = sum(np.exp(v_n))
+        expv_n += np.exp(v_od.loc[i,home])
+        lsm.append(expv_n)
+    EV_all[t] = np.log(lsm)
+    print(t, sum(EV_all[t][selected_zones]))
+EV_all.pop(0)
+
+#%% Plotting the recurive logits with variance reduction method
+
+def difference(EV1, EV2):
+    diff = []
+    zip_object = zip(EV1, EV2)
+    meanEVdiff = np.mean(EV1) - np.mean(EV2)
+    for EV1_i, EV2_i in zip_object:
+        diff.append(EV1_i - EV2_i - 0*meanEVdiff)
+        # diff.append(np.sqrt((EV1_i - EV2_i)**2))
+    return diff
+
+
+method1 = "RejectSampling"
+method2 = "SelfNormalized"  # ratio method
+method3 = "RegressionEstimatorIS"  ## I need to check this function: expt/pr is constant  # control variate method
+method4 = 'base'
+method5 = "RegressionEstimatorIS_scaper"
+
+
+EV_m1 = EV_approx(method1)
+EV_m2 = EV_approx(method2)
+EV_m3 = EV_approx(method3)
+EV_m4 = EV_approx(method4)
+EV_m5 = EV_approx(method5)
+
+  #%%
+plt.plot([np.mean(np.abs(EV_m1[t]-EV_m1[t-1])) for t in range(1,Tmax)], 'r')
+plt.plot([np.mean(np.abs(EV_m2[t]-EV_m2[t-1])) for t in range(1,Tmax)], 'b')
+plt.plot([np.mean(np.abs(EV_m3[t]-EV_m3[t-1])) for t in range(1,Tmax)], 'g')
+plt.plot([np.mean(np.abs(EV_m4[t]-EV_m4[t-1])) for t in range(1,Tmax)], 'm')
+plt.plot([np.mean(np.abs(EV_m5[t]-EV_m5[t-1])) for t in range(1,Tmax)], 'k')
+plt.plot([np.mean(np.abs(EV_all[t]-EV_all[t-1])) for t in range(1,Tmax)], 'c')
+
+plt.show()
+
+diff1 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m1)]
+diff2 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m2)]
+diff3 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m3)]
+diff4 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m4)]
+diff5 = [np.mean(np.abs(x)) for x in difference([y[selected_zones] for y in EV_all], EV_m5)]
+plt.show()
+print('print diff1', diff1)
+print('print diff2', diff2)
+print('print diff3', diff3)
+print('print diff4', diff4)
+print('print diff5', diff5)
+
+xx = pd.DataFrame([diff1, diff2, diff3, diff4, diff5], index = ['diff1', 'diff2', 'diff3', 'diff4', 'diff5']).T
+xx.plot.line(legend=True, color = {"diff1": "r", "diff2": "b", 'diff3':'g','diff4':'m', 'diff5':'k'})
+plt.show()
+
+
+#%% MNL 
 
 expt = np.exp(v_target)
+real = np.sum(expt)
 
-#%%
-Nsamp = 200
-nit=100;
-approx = np.zeros((nit,4))    
-NIrsum=np.zeros((Nalt,))
-real = np.sum(np.exp(v_target))
+
+
+def EV_approx_MNL(method,a):
+    #hd_lst = []
+    #expss = [np.nan] * (rng)
+ 
+    v_r = v_target*a + v*(1-a)   # new v (1240 values)
+    expv_r = np.exp(v_r)        
+    pr_n = expv_r/np.sum(expv_r)
+    v_n = v_od.loc[d,selected_zones]   # new vr (Nsamp number of values)
+    expv_n = np.exp(v_n)
+    ph_n = expv_n/np.sum(expv_n) # Probability from homezone (any selected zone). # Used for sampling locations (ph)   
+    exps = approx_methods(ph_n, pr_n[selected_zones], expv_n, Nsamp, I, NI, w[selected_zones], c, method, ph, pr_n,w, expv_n)
+
+    return exps  #hd_lst
+
+
+
+
+
+def create_df(hd_lst,j):
+    for i in range(rng):
+        lst = hd_lst[i]
+        hd_lst[i] = [np.round(elem, 2) for elem in lst ]
+    hd_lst_arr = np.array(hd_lst).flatten()
+    df_info = hd_lst_arr.reshape((-1,6))
+    df = pd.DataFrame(df_info ,columns = ['me', 'error', 'lse'+j, 'dev', 'tval', 'a'])
+    return df
+
+
+def avg_df(expss,k, mthd):
+    xx = pd.DataFrame()
+    xx['me'] = expss.mean(axis=1)
+    xx['error'] = real - xx['me']
+    xx['no'+mthd] = np.sqrt(np.mean((real-expss)**2,axis =1))
+    xx['dev'] = np.sqrt(np.var(expss,axis = 1)/(k))       
+    xx['tval'] = np.abs(xx['error']/xx['dev'])
+    xx['a'] = As
+    return xx
+
+rng = 11
+hd_rng = 1 
+As = np.linspace(0.1,1,rng)
+exps2 = pd.DataFrame()
+exps3 = pd.DataFrame()
+exps4 = pd.DataFrame()
 
 for k in range(nit):
-    
-    I, NI, w, c = SampleFromP(p_sample,Nsamp)
-    approx[k,0] = np.matmul(w, expt[I].T)
-    
-    Ns2=Nsamp
-    Ir, NIr, wr = RejectSampling(NI,pr,Ns2,p_sample)
-    approx[k,1]= np.matmul(wr,expt[Ir].T)
-      
-    qi = NI[np.flatnonzero(w)]/Nsamp
-    M = np.sum(pd.Series.multiply(w[np.flatnonzero(w)], pr[np.flatnonzero(w)]))
-    # w4 is equal to wr as Ns2 goes to infinity when 
-    # [Ir,NIr,wr]=RejectSampling(NI,pr,Ns2,ph);
-    w4 = w[np.flatnonzero(w)]/M
-    approx[k,2] = np.matmul(w4, expt[Ir].T)
-    
-    #w6 = w * Nsamp / sum(pr[c]/p_sample[c])
-    #approx[k,3] = np.matmul(w6, expt.T)
-    
-    approx[k,3] = RegressionEstimatorIS(pr,p_sample,expt/pr,c)
+    I, NI, w, c = SampleFromP(ph, Nsamp)
+    selected_zones = c
+    print(k)
+    expss2 = []
+    expss3 = []
+    expss4 = []
+    for i in range(rng):
+        a = Get_a(i, rng)
+        lst2 = EV_approx_MNL(method2,a)
+        expss2.append(lst2)
+        lst3 = EV_approx_MNL(method3,a)
+        expss3.append(lst3)
+        lst4 = EV_approx_MNL(method4,a)
+        expss4.append(lst4)
+    exps2[k] = pd.Series(expss2) 
+    exps3[k] = pd.Series(expss3) 
+    exps4[k] = pd.Series(expss4) 
 
-for i in range (approx.shape[1]):
-    val = approx[:,i]
-    me = np.mean(val)
-    error = real - me
-    no = np.sqrt(np.mean((real-val)**2))
-    dev = np.sqrt(np.var(val)/k)
-    tval = np.abs(error/dev)
-    print(i, "   ", Nsamp,"   ", "%.2f" % real,"   ",  "%.2f" % me,"   ", "%.2f" % np.abs(error),"   ", "%.2f" % dev,"   ", "%.2f" % tval, "   ","%.2f" % no,"   ", "%.2f" % np.sqrt(np.var(val)))   
-print("i    Nsamp    real       mean  abs(error)   dev     tval     no     sqrt(np.var(val)) ")
-      
-    
-    
-    
+hd_lst2 = []            
+hd_lst3 = []            
+hd_lst4 = []            
+
+hd_lst2 = avg_df(exps2, k, str(2))
+hd_lst3 = avg_df(exps3, k, str(3))
+hd_lst4 = avg_df(exps4, k, str(4))
 
 
 
+lse = pd.DataFrame((hd_lst2['no2'], hd_lst3['no3'], hd_lst4['no4'])).T
+
+lse.rename({'no2':'SelfNormalized','no3':'RegressionEstimatorIS', 'no4':'base'},inplace= True, axis = 1)
+
+home_zone = str(home)
+destination = str(d)
+ax = lse.plot(colormap='jet', title='home = '+ home_zone +' d = '+ destination)
+ax.set(xlabel='a (a0 = 0, a10 = 1)', ylabel='variance')
+ax.legend(loc='upper right')
+plt.show()
 
 
-    
-# %%
