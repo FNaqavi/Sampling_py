@@ -1,0 +1,7 @@
+        # I, NI, w, c = SampleFromP(ph, Nsamp)  # in every iteration it returns random draws
+        # u_samp = v_target.iloc[c][c]  # utilities of sampled zones to the sampled zones, size (Nsamp, Nsamp)
+        # pr1 = np.exp(u_samp) / np.sum(np.exp(u_samp), axis = 0)
+        #pr_n = pd.DataFrame(0, index = np.arange(1240), columns = np.arange(1240))
+        # #pr1 = pr1.drop_duplicates()   # drop duplicate rows
+        # #pr1 = pr1.loc[:,~pr1.columns.duplicated()]  # drop duplicate columns
+        #pr_n.loc[pr1.index, pr1.columns] = pr1       
