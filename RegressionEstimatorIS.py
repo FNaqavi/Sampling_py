@@ -27,6 +27,9 @@ def RegressionEstimatorIS(p, q, f, c):
     n = len(w)
     mw = np.mean(w)   
     b = (np.sum ((w-mw) * w *f )) / np.sum((w-mw)**2)
+    #mf = np.mean(f)
+    #b = np.cov(f,w)/np.var(w)
+    #b = np.sum((f-mf)*(w-mw))/np.sum((w-mw)**2)  #this one is my personal effort and Oskar was not involved
     mu_1 =  1/n *  np.sum (w * f)          # what is this?
     mu_2 = 1/n *  np.sum (b * (w - 1))    # what is this?
     mu = mu_1 - mu_2
